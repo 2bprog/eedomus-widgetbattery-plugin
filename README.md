@@ -10,11 +10,10 @@ Ce plugin eedomus permet d'afficher l'etat des batteries de vos périphériques.
 
 ## Champs a configurer : 
 
-![Configuration](https://raw.githubusercontent.com/2bprog/eedomus-widgetbattery-plugin/master/doc/wbattery-config2.png)
-
 * Niveau de batterie maximum : permet de filtrer les périphériques en fonction du pourcentage restant de la batterie.
 * Hauteur du widget : permet de fixer la hauteur du widget (1 à 8).
 
+![Configuration](https://raw.githubusercontent.com/2bprog/eedomus-widgetbattery-plugin/master/doc/wbattery-config2.png)
 
 ## Sources et historique des versions
 
