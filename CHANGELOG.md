@@ -1,5 +1,9 @@
-## v0.0.X-beta (XX/03/2020)
+## v0.0.2-beta (09/03/2020)
 
+* Prise en compte du thème sombre 
+* Ajout du lien vers le périphérique (seulement sur le portail)
+* Ajout message si aucun périphérique
+* Modification  de la hauteur du widget par défaut à 2
 * Correction encodage documentation eedomus
 
 ## v0.0.1-beta (08/03/2020)
