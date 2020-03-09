@@ -1,15 +1,15 @@
 <?
 
 /*
- Fichier : 2bw_bat.php 
- version : 0.0.0
+ Fichier : 2bw_battery.php 
+ version : 0.0.2
  auteur  : benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
 */
 
 $idsrc = getarg('id',false,0);
 $max = getarg('max', false, 100);
-
+$nbitems = 0;
 /*
 $titrevalue = '';
 if ($idsrc != 0 )
@@ -34,21 +34,27 @@ $idlist = $idt."list";
 
 $fontsize = 'w3-tiny';
 $fontcolor = '#666666';
+$fontcolorbw = '#444444';
+$titrecolor = 'rgba(0, 0, 0, 0.87)';
+$titrecolorbw = 'rgba(255, 255, 255, 0.8)';
 $fontname = 'tahoma,arial,helvetica,sans-serif';
 $titredisplay = 'display:none;';
 $titreheight = 0;
-//if ($inf->portailmobile === true || $inf->portaillocal === true)
+
 if ($inf->portail === false)
 {
     $titreheight = 30;
     $titredisplay = '';
     $fontsize = 'font14';
     $fontname = '"RobotoDraft","Roboto","Helvetica Neue",sans-serif';
-    $fontcolor = 'rgba(0, 0, 0, 0.54);';
+    $fontcolor = 'rgba(0, 0, 0, 0.54)';
+    $fontcolorbw = 'rgba(255, 255, 255, 0.64)';
+    //$titrecolor = 'rgba(0, 0, 0, 0.87)';
+    //$titrecolorbw = 'rgba(255, 255, 255, 0.8)';
 }
 
 // recuperation des informations batterie
-$jsbat =  sdk_getjsbatteries($inf,$max);
+$jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 
 ?>    
 
@@ -68,8 +74,8 @@ $jsbat =  sdk_getjsbatteries($inf,$max);
 
 <style>
     .txtcolor {
-        color:<? echo $fontcolor ?> !important;
-        font-family: <? echo $fontname ?>  !important;
+        color:<? echo $fontcolor; ?>;
+        font-family: <? echo $fontname; ?>  !important;
     }
 
     .nopadding     {
@@ -95,71 +101,147 @@ $jsbat =  sdk_getjsbatteries($inf,$max);
         margin-left:8px
     }
     
+    
     .Titre {
-        color:rgba(0, 0, 0, 0.87) !important;
+        color:<? echo $titrecolor; ?>;
         font-size: 16px !important;
         font-weight: 700 !important;
         text-overflow: ellipsis !important;
         overflow: hidden !important;
+        
     }
+    
+    .pointer {cursor: pointer;}
+    
+     .wait {
+        color:rgb(127, 127, 127) !important;
+     }
 </style>    
 </head>
 
 
-<body class="txtcolor">
+<body class="txtcolor" style="background-color: transparent;" scrolling="no">
 
-<div class="w3-container" id="<? echo $idload ?>">
+<div class="w3-container" id="<? echo $idload; ?>">
     <div class="w3-display-container" style="height:100%;">
-        <div class="w3-display-middle">
+        <div class="w3-display-middle wait <? echo $fontsize; ?> ">
             <i class="fa fa-spinner fa-spin"></i> Chargement...
         </div>
     </div>
 </div>
 
-<div class="w3-container nopadding  txtcolor <? echo $fontsize ?>" id="<? echo $idmain ?>" style="display:none">
-    <div class="w3-display-container nopadding" style="<? echo $titredisplay ?>height:<? echo $titreheight ?>px">
-        <div class="w3-display-left nopadding titre">
-            <? echo $titrevalue ?>
+<div class="w3-container nopadding  txtcolor <? echo $fontsize; ?>" id="<? echo $idmain; ?>" style="display:none">
+    <div class="w3-display-container nopadding" style="<? echo $titredisplay; ?>height:<? echo $titreheight; ?>px">
+        <div class="w3-display-left nopadding titre" id="<? echo $idtitre; ?>">
+            <? echo $titrevalue; ?>
         </div>
     </div>
-    <ul class="w3-ul" style="overflow:auto;" id="<? echo $idlist ?>">
+    <ul class="w3-ul" style="overflow:auto;" id="<? echo $idlist; ?>">
     </ul>    
 </div>
 
 <script>
 
+<? 
+	$noperiph = 'Aucun périphérique trouvé.';
+    if ($inf->portailmobile === true || $inf->portaillocal === true)
+      $noperiph = utf8_encode($noperiph);          
+?>
+
+// variables
+var _2bportail = <? echo $inf->portail ? "true" : "false"; ?>;
+
+var _2bjsbat = '<? echo $jsbat; ?>';
+
+var _2bwidload = '<? echo $idload; ?>';
+var _2bwidmain =  '<? echo $idmain; ?>';
+var _2bwidtitre = '<? echo $idtitre; ?>';
+var _2bwidlist = '<? echo $idlist; ?>';
+
+var _2brequesturi = '<?echo $inf->sdk_getvar('REQUEST_URI'); ?>' ;
+
+var _2bheight = <?echo $inf->height; ?>;
+var _2btitreheight = <?echo $titreheight; ?>;
+
+var _2bdarktheme = <? echo $inf->darktheme ? "true" : "false"; ?>;
+var _2bwfontcolorbw = '<? echo $fontcolorbw; ?>';
+var _2bwtitrecolorbw = '<? echo $titrecolorbw; ?>';
+
+var _2bnoperiph = '<? echo $noperiph; ?>';
+
+
+function rgbtext2val(rgb)
+{
+    var a = rgb.split("(")[1].split(")")[0];
+    a = a.split(",");
+    var b=a.map(function(x) { //For each array element
+         x = parseInt(x).toString(16); //Convert to a base16 string
+        return (x.length == 1) ? "0" + x : x; //Add zero if we get only one character
+        });
+    b = "0x" + b.join("");
+
+    return eval(b);
+}
 
 
 // au chargement
 window.onload = function() 
 {
-    // affichage et redimentionnement de l'iframe
-    Array.prototype.forEach.call(window.parent.document.querySelectorAll("iframe"), 
+    
+    
+    if (_2bheight !== -1)
+    {
+        // Mode mobile : on a la hauteur => on l'utilise
+        var uil = document.getElementById(_2bwidlist);
+        uil.style.height = _2bheight - (_2btitreheight + 2);
+    }
+    else
+    {
+        // Avec l'iframe
+        Array.prototype.forEach.call(window.parent.document.querySelectorAll("iframe"), 
         function(iframe) 
         {
             // recup iframe
             const url = new URL(iframe.src);
             var framesrc = url.pathname + url.search;
-            if ( framesrc === '<? echo $inf->sdk_getvar('REQUEST_URI'); ?>')
+            if ( framesrc === _2brequesturi )
             {
                 // trouvé => redimentionnement
                 iframe.style.width='100%';
-                //iframe.style.marginRight='2px';
             
                 // recup id element et affichage
-                var uil = document.getElementById('<? echo $idlist ?>');
-                var utitle = document.getElementById('<? echo $idtitre ?>');
-                
-                uil.style.height = iframe.height - (<? echo $titreheight ?> + 2);
-                
+                var uil = document.getElementById(_2bwidlist);
+                uil.style.height = iframe.height - (_2btitreheight + 2);
                 return;
               }
         });
-        
-    var uil = document.getElementById('<? echo $idlist ?>');
+    
+    }
+
+
+    var darktheme = _2bdarktheme;
+    var rgb = '';
+    if (darktheme == false && (window.parent !== null))  
+    {
+        var rgb = window.getComputedStyle( window.parent.document.body ,null).getPropertyValue('background-color');
+        darktheme = (rgbtext2val(rgb) === 0);
+    }
+    
+    if (darktheme != false)
+    {
+        //debugger;
+        if (rgb == '') rgb = 'rgb(0,0,0)';
+        document.body.style.backgroundColor = rgb;
+        document.body.style.color = _2bwfontcolorbw;
+        document.getElementById(_2bwidmain).style.color = _2bwfontcolorbw;
+        document.getElementById(_2bwidtitre).style.color = _2bwtitrecolorbw;
+    }
+    
+    
+    var uil = document.getElementById(_2bwidlist);
     if (uil !== null)
     {
-        var eids = JSON.parse('<? echo $jsbat; ?>');    
+        var eids = JSON.parse(_2bjsbat);    
         eids.sort(function(a, b)
          {
              var r =  a.bat - b.bat;
@@ -173,6 +255,7 @@ window.onload = function()
         for (i=0;i<nb;i++)
         {
             
+            var eid = eids[i].id;
             var bat = eids[i].bat;
             if (bat < 0) bat = 0;
             if (bat > 100) bat = 100;
@@ -185,21 +268,33 @@ window.onload = function()
             item = item + bat.toString() + '%</b></div>'; // Battery
    
             item = item + '<div class="w3-rest  nopadding  ellipsis">';
+            
+            if (_2bportail===true) item = item + '<a class="pointer" onclick="javascript:window.parent.showConfig(true, ' + eid.toString() + ');">';
+            
             item = item + '<img class="imgbat" src="https://m.eedomus.com/img/battery_';
             item = item + Math.floor((bat+20) / 25).toString();
             item = item + '.png">';
+            
+            if (_2bportail===true) item = item + '</a>';
+            
             item = item + eids[i].name;
             item = item + '</div></div></li>';
     
             innerhtml = innerhtml + item;
             
         }
+        if (nb == 0)
+        {            
+            var item = '<li class="w3-padding-small w3-center">'
+            item = item + '<p>' + _2bnoperiph + '</p>';
+            item = item + '</li>'; 
+            innerhtml = item;
+        }
         uil.innerHTML  = innerhtml;
     }
-    
-    
-    document.getElementById("<? echo $idmain ?>").style.display = "block";
-    document.getElementById("<? echo $idload ?>").style.display = "none";  
+        
+    document.getElementById(_2bwidmain).style.display = "block";
+    document.getElementById(_2bwidload).style.display = "none";  
 
     
 };    
@@ -208,22 +303,14 @@ window.onload = function()
 </body>
 <html>
 
-
 <? 
 // ******************************************
 //  HTML - END
 // ******************************************
 ?>
-
-
-
-
-
-
-
 <?
 
-function sdk_getjsbatteries($inf,$maxlevel)
+function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
     if ($inf->portaillocal || $inf->inlocalnet)
     {
@@ -257,7 +344,7 @@ function sdk_getjsbatteries($inf,$maxlevel)
             $sep = ',';
             $eid = $value[$sid];
             $ename = htmlspecialchars($value[$sname]);
-            if ($inf->portailmobile === true) // || $inf->portaillocal === true)
+            if ($inf->portailmobile === true || $inf->portaillocal === true)
                 $ename = utf8_encode($ename);
             
 
@@ -268,6 +355,7 @@ function sdk_getjsbatteries($inf,$maxlevel)
         }
     }
     
+    $nbitems = $inb;
     $jsret = $jsret.']';
     return $jsret; 
 }
@@ -286,6 +374,7 @@ class sdk_eedclientinfo
    public $ios  = false;
    public $inlocalnet  = false;
    public $darktheme = false;
+   public $height = -1;
 
   // $svars  = $_SERVERS
   // $args = $_GET
@@ -300,6 +389,8 @@ class sdk_eedclientinfo
         $typemobile = $this->sdk_getarg('app');
         $this->darktheme  = $this->sdk_getarg('dark_theme') == '1';
         
+        $this->height = $this->sdk_getarg('SMARTPHONE_HEIGHT');
+        if ($this->height === '') $this->height = -1;
         
         // portail 'normal'
         $this->portail = strpos($host, 'secure.eedomus') !== false;
@@ -331,7 +422,7 @@ class sdk_eedclientinfo
         
         // client en local 
         $this->inlocalnet = $this->sdk_checkprivatenet($remote);
-        
+      
         
     }
     
@@ -381,6 +472,8 @@ class sdk_eedclientinfo
         echo "ios : ";              var_dump($this->ios);
 		echo "darktheme : ";        var_dump($this->darktheme);
         echo "inlocalnet : ";       var_dump($this->inlocalnet);
+        echo "height : ";        var_dump($this->height);
+        
     }
     
 
