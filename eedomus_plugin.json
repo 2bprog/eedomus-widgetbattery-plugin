@@ -2,9 +2,9 @@
 	"plugin_id": "bbwbattery",
 	"name_fr": "Etat des batterie",
 	"icon": "wbattery.png",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"creation_date": "2020-03-05",
-	"modification_date": "2020-03-08",
+	"modification_date": "2020-03-09",
 	"author": "Benj70b<br><a target='_blank' href='https://github.com/2bprog/eedomus-widgetbattery-plugin'>Sources sur github <img src='/img/external.png'></a>",
 	"description_fr": "<b>Ce Plugin permet d'afficher l'etat des batteries de vos périphériques.</b>",
 	"description_en": "",
@@ -24,7 +24,7 @@
 			"parameter": "HEIGHTWIDGET",
 			"description":  "Hauteur du widget" ,
 			"xtype": "numberfield",
-			"default_value": "3",
+			"default_value": "2",
 			"field": "style: 'padding: 3px;', minValue:3, maxValue:8, allowDecimals:false, width:60, allowBlank:false"
 		}		
 	],
