@@ -2,7 +2,7 @@
 
 /*
  Fichier : 2bw_battery.php 
- version : 0.0.2
+ version : 0.0.4
  auteur  : benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
 */
@@ -39,6 +39,7 @@ $titrecolor = 'rgba(0, 0, 0, 0.87)';
 $titrecolorbw = 'rgba(255, 255, 255, 0.8)';
 $fontname = 'tahoma,arial,helvetica,sans-serif';
 $titredisplay = 'display:none;';
+//$titredisplay = '';
 $titreheight = 0;
 
 if ($inf->portail === false)
@@ -131,8 +132,8 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 </div>
 
 <div class="w3-container nopadding  txtcolor <? echo $fontsize; ?>" id="<? echo $idmain; ?>" style="display:none">
-    <div class="w3-display-container nopadding" style="<? echo $titredisplay; ?>height:<? echo $titreheight; ?>px">
-        <div class="w3-display-left nopadding titre" id="<? echo $idtitre; ?>">
+    <div class="w3-top w3-display-container nopadding titre" id="<? echo $idtitre; ?>" style="<? echo $titredisplay; ?>height:<? echo $titreheight; ?>px">
+        <div class="w3-display-left nopadding " >
             <? echo $titrevalue; ?>
         </div>
     </div>
@@ -194,6 +195,7 @@ window.onload = function()
         // Mode mobile : on a la hauteur => on l'utilise
         var uil = document.getElementById(_2bwidlist);
         uil.style.height = _2bheight - (_2btitreheight + 2);
+        uil.style.marginTop = _2btitreheight;
     }
     else
     {
@@ -212,6 +214,7 @@ window.onload = function()
                 // recup id element et affichage
                 var uil = document.getElementById(_2bwidlist);
                 uil.style.height = iframe.height - (_2btitreheight + 2);
+                uil.style.marginTop = _2btitreheight;
                 return;
               }
         });
@@ -231,10 +234,17 @@ window.onload = function()
     {
         //debugger;
         if (rgb == '') rgb = 'rgb(0,0,0)';
-        document.body.style.backgroundColor = rgb;
+        
         document.body.style.color = _2bwfontcolorbw;
         document.getElementById(_2bwidmain).style.color = _2bwfontcolorbw;
         document.getElementById(_2bwidtitre).style.color = _2bwtitrecolorbw;
+    }
+    
+    if (_2bportail === false)
+    {
+        document.body.style.backgroundColor = rgb;
+        document.getElementById(_2bwidmain).style.backgroundColor = rgb;
+        document.getElementById(_2bwidtitre).style.backgroundColor = rgb;
     }
     
     
@@ -312,6 +322,7 @@ window.onload = function()
 
 function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
+    // sur le reseau local (sur la box ou app mobile en mode local)
     if ($inf->portaillocal || $inf->inlocalnet)
     {
         $spid = 'parent_periph_id';
@@ -324,6 +335,7 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
         $result = sdk_json_decode($result, false);
         $eeids = $result['body'];
     }
+    // sur le portail ou le portail mobile ou l'app mobile via serveur eedomus
     else
     {
         $spid = 'parent_device_id';
