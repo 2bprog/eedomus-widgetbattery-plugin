@@ -1,3 +1,7 @@
+## v0.0.X-beta (09/03/2020)
+
+* Modification dans la gestion du titre (hors portail)
+
 ## v0.0.3-beta (09/03/2020)
 
 * Correction de la valeur minimale de la hauteur du widget 
