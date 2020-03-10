@@ -1,5 +1,6 @@
 ## v0.0.X-beta (09/03/2020)
 
+* Recuperation et affichage du titre configuré dans le widget
 * Modification dans la gestion du titre (hors portail)
 
 ## v0.0.3-beta (09/03/2020)
