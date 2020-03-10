@@ -10,16 +10,21 @@
 $idsrc = getarg('id',false,0);
 $max = getarg('max', false, 100);
 $nbitems = 0;
-/*
+
 $titrevalue = '';
 if ($idsrc != 0 )
 {
-    $src = getValue($idsrc);
-    var_dump($src);
-    die;
-    if ($src !== null) $titrevalue = $src['full_name'];
+    $src = getPeriphList(false, $idsrc);
+    if (count($src) == 1)
+    {
+        $fullname = $src[$idsrc]['full_name'];
+        $roomname = $src[$idsrc]['room_label'];
+        
+        $titrevalue = trim(sdk_removeifatend($fullname, $roomname));
+    }
 }
-if ($titrevalue == '')  */
+
+if ($titrevalue == '') 
     $titrevalue = "Etat des batteries";
 
 
@@ -319,6 +324,14 @@ window.onload = function()
 // ******************************************
 ?>
 <?
+
+function sdk_removeifatend($source, $atend)
+{
+    $ret = $source;
+    if (substr($source,-strlen($atend))===$atend) 
+        $ret = substr($source, 0, strlen($source)-strlen($atend));
+    return $ret;
+}
 
 function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
