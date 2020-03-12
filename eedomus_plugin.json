@@ -4,7 +4,7 @@
 	"icon": "wbattery.png",
 	"version": "0.0.4",
 	"creation_date": "2020-03-05",
-	"modification_date": "2020-03-10",
+	"modification_date": "2020-03-12",
 	"author": "Benj70b<br><a target='_blank' href='https://github.com/2bprog/eedomus-widgetbattery-plugin'>Sources sur github <img src='/img/external.png'></a>",
 	"description_fr": "<b>Ce Plugin permet d'afficher l'etat des batteries de vos périphériques.</b>",
 	"description_en": "",
