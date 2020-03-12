@@ -1,7 +1,7 @@
-## v0.0.X-beta (09/03/2020)
+## v0.0.4-beta (12/03/2020)
 
-* Recuperation et affichage du titre configuré dans le widget
-* Modification dans la gestion du titre (hors portail)
+* Recuperation et affichage du titre configuré dans le widget (hors portail)
+* Amélioration du scroll pour les applications mobiles
 
 ## v0.0.3-beta (09/03/2020)
 
