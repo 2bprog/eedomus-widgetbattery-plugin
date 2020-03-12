@@ -3,8 +3,9 @@
 /*
  Fichier : 2bw_battery.php 
  version : 0.0.4
- auteur  : benj70b
+ auteur  : Benjamin B. - benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
+ 
 */
 
 $idsrc = getarg('id',false,0);
@@ -27,7 +28,6 @@ if ($idsrc != 0 )
 if ($titrevalue == '') 
     $titrevalue = "Etat des batteries";
 
-
 // lecture des infos
 $inf = new sdk_eedclientinfo($_SERVER, $_GET); 
 $idt = time(); // ID aléatoire
@@ -45,18 +45,14 @@ $titrecolorbw = 'rgba(255, 255, 255, 0.8)';
 $fontname = 'tahoma,arial,helvetica,sans-serif';
 $titredisplay = 'display:none;';
 //$titredisplay = '';
-$titreheight = 0;
 
 if ($inf->portail === false)
 {
-    $titreheight = 30;
     $titredisplay = '';
     $fontsize = 'font14';
     $fontname = '"RobotoDraft","Roboto","Helvetica Neue",sans-serif';
     $fontcolor = 'rgba(0, 0, 0, 0.54)';
     $fontcolorbw = 'rgba(255, 255, 255, 0.64)';
-    //$titrecolor = 'rgba(0, 0, 0, 0.87)';
-    //$titrecolorbw = 'rgba(255, 255, 255, 0.8)';
 }
 
 // recuperation des informations batterie
@@ -79,6 +75,9 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 
 
 <style>
+    .load {
+        z-index: 100;
+    }
     .txtcolor {
         color:<? echo $fontcolor; ?>;
         font-family: <? echo $fontname; ?>  !important;
@@ -107,10 +106,14 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
         margin-left:8px
     }
     
+    .w3-button
+    {
+        cursor: pointer;
+    }
     
     .Titre {
         color:<? echo $titrecolor; ?>;
-        font-size: 16px !important;
+        font-size: : <? echo ($inf->portail) ? '11' : '16'; ?> px !important;
         font-weight: 700 !important;
         text-overflow: ellipsis !important;
         overflow: hidden !important;
@@ -128,7 +131,7 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 
 <body class="txtcolor" style="background-color: transparent;" scrolling="no">
 
-<div class="w3-container" id="<? echo $idload; ?>">
+<div class="w3-container load" id="<? echo $idload; ?>">
     <div class="w3-display-container" style="height:100%;">
         <div class="w3-display-middle wait <? echo $fontsize; ?> ">
             <i class="fa fa-spinner fa-spin"></i> Chargement...
@@ -137,15 +140,20 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 </div>
 
 <div class="w3-container nopadding  txtcolor <? echo $fontsize; ?>" id="<? echo $idmain; ?>" style="display:none">
-    <div class="w3-top w3-display-container nopadding titre" id="<? echo $idtitre; ?>" style="<? echo $titredisplay; ?>height:<? echo $titreheight; ?>px">
-        <div class="w3-display-left nopadding " >
-            <? echo $titrevalue; ?>
-        </div>
+  
+    <div class="w3-top">
+        <div class="w3-bar nopadding titre" id="<? echo $idtitre; ?>" style="<? echo $titredisplay; ?>" >
+            <div class="w3-bar-item w3-padding-small"><? echo $titrevalue; ?>
+            </div>
+        </div>    
     </div>
-    <ul class="w3-ul" style="overflow:auto;" id="<? echo $idlist; ?>">
-    </ul>    
-</div>
 
+    <div class="w3-container nopadding 2bwpanel" style="overflow:auto;">    
+        <ul id="<? echo $idlist; ?>" class="w3-ul" style="" ></ul>
+    </div>
+
+</div>
+    
 <script>
 
 <? 
@@ -164,10 +172,13 @@ var _2bwidmain =  '<? echo $idmain; ?>';
 var _2bwidtitre = '<? echo $idtitre; ?>';
 var _2bwidlist = '<? echo $idlist; ?>';
 
-var _2brequesturi = '<?echo $inf->sdk_getvar('REQUEST_URI'); ?>' ;
+var _2bweltload = document.getElementById(_2bwidload);;
+var _2bweltmain = document.getElementById(_2bwidmain);;
+var _2bwelttitre = document.getElementById(_2bwidtitre);;
+var _2bweltlist = document.getElementById(_2bwidlist);;
 
-var _2bheight = <?echo $inf->height; ?>;
-var _2btitreheight = <?echo $titreheight; ?>;
+var _2bmarge = <? echo $inf->portail ? 2 : 0; ?>;
+var _2brequesturi = '<?echo $inf->sdk_getvar('REQUEST_URI'); ?>' ;
 
 var _2bdarktheme = <? echo $inf->darktheme ? "true" : "false"; ?>;
 var _2bwfontcolorbw = '<? echo $fontcolorbw; ?>';
@@ -190,127 +201,167 @@ function rgbtext2val(rgb)
 }
 
 
-// au chargement
-window.onload = function() 
+/*
+function setheight(totalHeight, headerHeight, mainElement, panelclass)
+
+fixe la hauteur des elements en fonction de la hauteur d'une entete (optionnel)
+(cela permet de mettre en place du scroll si les classes utilise overflow)
+pour totalHeight utiliser visualViewport.height
+*/
+function eedw_setheight(totalHeight, headerHeight, mainElement, panelclass, marge)
+{
+
+    document.body.style.height = totalHeight;
+    if (mainElement !== null) mainElement.style.height = totalHeight;
+    
+    var i;
+    var x = document.getElementsByClassName(panelclass);
+    for (i = 0; i < x.length; i++) 
+    {
+        x[i].style.position  = "absolute";
+        x[i].style.top = headerHeight;
+        x[i].style.height = totalHeight - (headerHeight  + marge);
+        x[i].style.width = "100%";
+    }
+}
+
+/*
+function eedw_adjustiframe(brequesturi)
+
+ajustment de l'iframe en largeur à 100% 
+ceci s'effectue avec une recherche sur l'url du widget
+en php => $_SERVER['REQUEST_URI']
+*/
+function eedw_adjustiframe(requesturi)
 {
     
-    
-    if (_2bheight !== -1)
+    if (window.parent !== null)
     {
-        // Mode mobile : on a la hauteur => on l'utilise
-        var uil = document.getElementById(_2bwidlist);
-        uil.style.height = _2bheight - (_2btitreheight + 2);
-        uil.style.marginTop = _2btitreheight;
-    }
-    else
-    {
-        // Avec l'iframe
         Array.prototype.forEach.call(window.parent.document.querySelectorAll("iframe"), 
         function(iframe) 
         {
             // recup iframe
             const url = new URL(iframe.src);
             var framesrc = url.pathname + url.search;
-            if ( framesrc === _2brequesturi )
+            if ( framesrc === requesturi )
             {
-                // trouvé => redimentionnement
+                // trouvé => redimentionnement + sauvegarde de la hauteur
                 iframe.style.width='100%';
-            
-                // recup id element et affichage
-                var uil = document.getElementById(_2bwidlist);
-                uil.style.height = iframe.height - (_2btitreheight + 2);
-                uil.style.marginTop = _2btitreheight;
                 return;
               }
         });
-    
     }
+}
+
+// au chargement
+window.onresize = function() 
+{
+    eedw_setheight( visualViewport.height, _2bwelttitre.offsetHeight, _2bweltmain, '2bwpanel', _2bmarge);
+}
 
 
+// au chargement
+window.onload = function() 
+{
     var darktheme = _2bdarktheme;
-    var rgb = '';
-    if (darktheme == false && (window.parent !== null))  
+    var backcolor = '';
+    if (darktheme == false && (window.parent !== null) && _2bportail === false)  
     {
-        var rgb = window.getComputedStyle( window.parent.document.body ,null).getPropertyValue('background-color');
-        darktheme = (rgbtext2val(rgb) === 0);
+        var backcolor = window.getComputedStyle( window.parent.document.body ,null).getPropertyValue('background-color');
+        darktheme = (rgbtext2val(backcolor) === 0);
     }
     
-    if (darktheme != false)
-    {
-        //debugger;
-        if (rgb == '') rgb = 'rgb(0,0,0)';
-        
-        document.body.style.color = _2bwfontcolorbw;
-        document.getElementById(_2bwidmain).style.color = _2bwfontcolorbw;
-        document.getElementById(_2bwidtitre).style.color = _2bwtitrecolorbw;
-    }
-    
-    if (_2bportail === false)
-    {
-        document.body.style.backgroundColor = rgb;
-        document.getElementById(_2bwidmain).style.backgroundColor = rgb;
-        document.getElementById(_2bwidtitre).style.backgroundColor = rgb;
-    }
-    
-    
-    var uil = document.getElementById(_2bwidlist);
-    if (uil !== null)
-    {
-        var eids = JSON.parse(_2bjsbat);    
-        eids.sort(function(a, b)
-         {
-             var r =  a.bat - b.bat;
-             if (r == 0) r = a.name.localeCompare(b.name);
-             return r;
-             
-         });
-        
-        var nb = eids.length;  
-        var innerhtml = '';
-        for (i=0;i<nb;i++)
-        {
-            
-            var eid = eids[i].id;
-            var bat = eids[i].bat;
-            if (bat < 0) bat = 0;
-            if (bat > 100) bat = 100;
-            
-          // id":"'.$eid.'" ,"bat":'.$ebat.' ,"name
-            var item = '<li class="w3-padding-small">'
-            item = item + '<div class="w3-row nopadding ">';
-            
-            item = item + '<div class="w3-col w3-left  nopadding w3-right-align " style="width:40px"><b>';
-            item = item + bat.toString() + '%</b></div>'; // Battery
-   
-            item = item + '<div class="w3-rest  nopadding  ellipsis">';
-            
-            if (_2bportail===true) item = item + '<a class="pointer" onclick="javascript:window.parent.showConfig(true, ' + eid.toString() + ');">';
-            
-            item = item + '<img class="imgbat" src="https://m.eedomus.com/img/battery_';
-            item = item + Math.floor((bat+20) / 25).toString();
-            item = item + '.png">';
-            
-            if (_2bportail===true) item = item + '</a>';
-            
-            item = item + eids[i].name;
-            item = item + '</div></div></li>';
-    
-            innerhtml = innerhtml + item;
-            
-        }
-        if (nb == 0)
-        {            
-            var item = '<li class="w3-padding-small w3-center">'
-            item = item + '<p>' + _2bnoperiph + '</p>';
-            item = item + '</li>'; 
-            innerhtml = item;
-        }
-        uil.innerHTML  = innerhtml;
-    }
-        
-    document.getElementById(_2bwidmain).style.display = "block";
-    document.getElementById(_2bwidload).style.display = "none";  
+    // ajustement de l'iframe si besoin
+    eedw_adjustiframe(_2brequesturi);
 
+    if (_2bportail === false)
+    { 
+         if (darktheme !== true) 
+            darktheme = (rgbtext2val(backcolor) === 0);
+    
+        if (backcolor == '') 
+            backcolor = 'rgb(0,0,0)';
+    
+        if (darktheme !== false)
+        {
+            document.body.style.color = _2bwfontcolorbw;
+            _2bweltload.style.color = _2bwfontcolorbw;
+            _2bweltmain.style.color = _2bwfontcolorbw;
+            _2bwelttitre.style.color = _2bwtitrecolorbw;
+        }
+        
+        
+        document.body.style.backgroundColor = backcolor;
+        _2bweltload.style.backgroundColor = backcolor;
+        _2bweltmain.style.backgroundColor = backcolor;
+        _2bwelttitre.style.backgroundColor = backcolor;
+    }
+    
+    var eids = JSON.parse(_2bjsbat);    
+    eids.sort(function(a, b)
+     {
+         var r =  a.bat - b.bat;
+         if (r == 0) r = a.name.localeCompare(b.name);
+         return r;
+         
+     });
+    
+    var nb = eids.length;  
+    var innerhtml = '';
+    for (i=0;i<nb;i++)
+    {
+        
+        var eid = eids[i].id;
+        var bat = eids[i].bat;
+        var batimg = 0;
+        if (bat < 0) bat = 0;
+        if (bat > 100) bat = 100;
+        
+      // id":"'.$eid.'" ,"bat":'.$ebat.' ,"name
+        var item = '<li class="w3-padding-small">'
+        item = item + '<div class="w3-row nopadding ">';
+        
+        item = item + '<div class="w3-col w3-left  nopadding w3-right-align " style="width:40px"><b>';
+        item = item + bat.toString() + '%</b></div>'; // Battery
+
+        item = item + '<div class="w3-rest  nopadding  ellipsis">';
+        
+        if (_2bportail===true) item = item + '<a class="pointer" onclick="javascript:window.parent.showConfig(true, ' + eid.toString() + ');">';
+        
+        item = item + '<img class="imgbat" src="https://m.eedomus.com/img/battery_';
+        batimg = 0;
+        if (bat > 0)
+        {
+            batimg = Math.floor((bat + 25) / 25);
+            if (batimg > 4) batimg = 4;
+        }
+        item = item + batimg.toString();
+        item = item + '.png">';
+        
+        if (_2bportail===true) item = item + '</a>';
+        
+        item = item + eids[i].name;
+        item = item + '</div></div></li>';
+
+        innerhtml = innerhtml + item;
+        
+    }
+    if (nb == 0)
+    {            
+        var item = '<li class="w3-padding-small w3-center">'
+        item = item + '<p>' + _2bnoperiph + '</p>';
+        item = item + '</li>'; 
+        innerhtml = item;
+    }
+    
+    _2bweltlist.innerHTML  = innerhtml;
+    
+    // force l'affichage pour avoir la hauteur du titre  
+    _2bweltmain.style.display = "block";  
+    
+    eedw_setheight( visualViewport.height, _2bwelttitre.offsetHeight, _2bweltmain, '2bwpanel', _2bmarge);
+    
+    _2bweltload.style.display = "none";
     
 };    
 
@@ -335,6 +386,7 @@ function sdk_removeifatend($source, $atend)
 
 function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
+    
     // sur le reseau local (sur la box ou app mobile en mode local)
     if ($inf->portaillocal || $inf->inlocalnet)
     {
@@ -347,6 +399,7 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
         $result = str_replace ( '\"' , ' ' , $result);
         $result = sdk_json_decode($result, false);
         $eeids = $result['body'];
+        $doloadbat = true;
     }
     // sur le portail ou le portail mobile ou l'app mobile via serveur eedomus
     else
@@ -363,20 +416,25 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     foreach ($eeids as $key => $value)
     {
         $pid = $value[$spid];
-        $ebat = $value['battery'];
-        if ( ($pid === '' || $pid === null) && ($ebat !== '' && $ebat <= $maxlevel))
+        
+        if ($pid === '' || $pid === null) 
         {
-            $sep = ',';
             $eid = $value[$sid];
-            $ename = htmlspecialchars($value[$sname]);
-            if ($inf->portailmobile === true || $inf->portaillocal === true)
-                $ename = utf8_encode($ename);
-            
-
-            if ($inb === 0) $sep='';
-            
-            $jsret = $jsret.$sep.'{ "id":"'.$eid.'" ,"bat":'.$ebat.' ,"name":"'.$ename.'" }';
-            $inb ++;
+            $ebat = $value['battery'];
+            if ($ebat !== '' && intval($ebat) <= $maxlevel)
+            {
+                $sep = ',';
+                
+                $ename = htmlspecialchars($value[$sname]);
+                if ($inf->portailmobile === true || $inf->portaillocal === true)
+                    $ename = utf8_encode($ename);
+                
+    
+                if ($inb === 0) $sep='';
+                
+                $jsret = $jsret.$sep.'{ "id":"'.$eid.'" ,"bat":'.$ebat.' ,"name":"'.$ename.'" }';
+                $inb ++;
+            }
         }
     }
     
