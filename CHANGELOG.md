@@ -1,5 +1,9 @@
 ## v0.0.4-beta (12/03/2020)
 
+* Correction du problème de chargement 
+
+## v0.0.4-beta (12/03/2020)
+
 * Recuperation et affichage du titre configuré dans le widget (hors portail)
 * Amélioration du scroll pour les applications mobiles
 

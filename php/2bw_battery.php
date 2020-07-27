@@ -2,7 +2,7 @@
 
 /*
  Fichier : 2bw_battery.php 
- version : 0.0.4
+ version : 0.0.5
  auteur  : Benjamin B. - benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
  
@@ -388,7 +388,7 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
     
     // sur le reseau local (sur la box ou app mobile en mode local)
-    if ($inf->portaillocal || $inf->inlocalnet)
+    if (false && ($inf->portaillocal || $inf->inlocalnet))
     {
         $spid = 'parent_periph_id';
         $sid = 'periph_id';
@@ -440,6 +440,7 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     
     $nbitems = $inb;
     $jsret = $jsret.']';
+    $jsret = str_replace ( "'","\'", $jsret);
     return $jsret; 
 }
 
