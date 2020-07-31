@@ -1,4 +1,4 @@
-## v0.0.5-beta (12/03/2020)
+## v0.0.5-beta (27/07/2020)
 
 * Correction du problème de chargement 
 
