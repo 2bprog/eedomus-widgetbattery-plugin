@@ -2,7 +2,7 @@
 
 /*
  Fichier : 2bw_battery.php 
- version : 0.0.5
+ version : 0.0.6
  auteur  : Benjamin B. - benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
  
@@ -440,7 +440,8 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     
     $nbitems = $inb;
     $jsret = $jsret.']';
-    $jsret = str_replace ( "'","\'", $jsret);
+    $jsret = str_replace ( "'","\\'", $jsret);
+	$jsret = str_replace ( "\\\\'","\\'", $jsret);
     return $jsret; 
 }
 
