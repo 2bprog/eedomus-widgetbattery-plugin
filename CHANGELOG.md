@@ -1,7 +1,7 @@
 ## v0.0.7-beta (14/08/2020)
 
-* Certains périphériques n'etaient pas affichés !
-* BUG ENCOURS] les batteries a 0 ne d'affiche pas !
+* Certains périphériques n'étaient pas affichés !
+* [BUG EN COURS] les batteries a 0 ne s'affichent pas !
 
 ## v0.0.6-beta (02/08/2020)
 
