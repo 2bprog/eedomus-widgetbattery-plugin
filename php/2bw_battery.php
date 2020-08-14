@@ -2,7 +2,7 @@
 
 /*
  Fichier : 2bw_battery.php 
- version : 0.0.6
+ version : 0.0.7
  auteur  : Benjamin B. - benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
  
@@ -387,28 +387,12 @@ function sdk_removeifatend($source, $atend)
 function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
 {
     
-    // sur le reseau local (sur la box ou app mobile en mode local)
-    if (false && ($inf->portaillocal || $inf->inlocalnet))
-    {
-        $spid = 'parent_periph_id';
-        $sid = 'periph_id';
-        $sname ='name';
-        
-        $url = 'http://localhost/api/get?action=periph.list';
-        $result = httpQuery($url, 'GET' , ''); 
-        $result = str_replace ( '\"' , ' ' , $result);
-        $result = sdk_json_decode($result, false);
-        $eeids = $result['body'];
-        $doloadbat = true;
-    }
-    // sur le portail ou le portail mobile ou l'app mobile via serveur eedomus
-    else
-    {
-        $spid = 'parent_device_id';
-        $sid = 'device_id';
-        $sname ='full_name';
-        $eeids = getPeriphList();
-    }
+ 
+    $spid = 'parent_device_id';
+    $sid = 'device_id';
+    $sname ='full_name';
+    $eeids = getPeriphList();
+
     
     // parcourt du resultat pour obtenir les indicateurs de batteries
     $jsret = '[ ';
@@ -416,12 +400,13 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     foreach ($eeids as $key => $value)
     {
         $pid = $value[$spid];
-        
-        if ($pid === '' || $pid === null) 
+        $eid = $value[$sid];
+        if ($pid === '' || $pid === null || $pid=== $eid) 
         {
-            $eid = $value[$sid];
             $ebat = $value['battery'];
-            if ($ebat !== '' && intval($ebat) <= $maxlevel)
+            if ($ebat !== ''  && intval($ebat) <= $maxlevel)
+            //if ($ebat === '')
+              //  $ebat=0;
             {
                 $sep = ',';
                 
@@ -432,6 +417,9 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     
                 if ($inb === 0) $sep='';
                 
+                //$ename = str_replace ( "\\","\\\\", $ename);
+                $ename = str_replace ( "'","\\'", $ename);
+            	$ename = str_replace ( "\\\\'","\\'", $ename);
                 $jsret = $jsret.$sep.'{ "id":"'.$eid.'" ,"bat":'.$ebat.' ,"name":"'.$ename.'" }';
                 $inb ++;
             }
@@ -440,8 +428,8 @@ function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
     
     $nbitems = $inb;
     $jsret = $jsret.']';
-    $jsret = str_replace ( "'","\\'", $jsret);
-	$jsret = str_replace ( "\\\\'","\\'", $jsret);
+    //$jsret = str_replace ( "'","\\'", $jsret);
+	//$jsret = str_replace ( "\\\\'","\\'", $jsret);
     return $jsret; 
 }
 

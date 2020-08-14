@@ -1,3 +1,8 @@
+## v0.0.7-beta (14/08/2020)
+
+* Certains périphériques n'etaient pas affichés !
+* BUG ENCOURS] les batteries a 0 ne d'affiche pas !
+
 ## v0.0.6-beta (02/08/2020)
 
 * 2éme Correction du problème de chargement 
