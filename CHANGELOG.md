@@ -1,3 +1,7 @@
+## v0.0.8-beta (02/09/2020)
+
+* Affichage des batteries 'faible'
+
 ## v0.0.7-beta (14/08/2020)
 
 * Certains périphériques n'étaient pas affichés !

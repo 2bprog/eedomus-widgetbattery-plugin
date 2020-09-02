@@ -2,7 +2,7 @@
 
 /*
  Fichier : 2bw_battery.php 
- version : 0.0.8
+ version : 0.0.4
  auteur  : Benjamin B. - benj70b
  github  : https://github.com/2bprog/eedomus-widgetbattery-plugin
  
@@ -55,9 +55,6 @@ if ($inf->portail === false)
     $fontcolorbw = 'rgba(255, 255, 255, 0.64)';
 }
 
-// recuperation des informations batterie
-$jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
-
 ?>    
 
 <? 
@@ -72,7 +69,7 @@ $jsbat =  sdk_getjsbatteries($inf,$max, $nbitems);
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>        
 
 <style>
     .load {
@@ -186,9 +183,152 @@ var _2bwtitrecolorbw = '<? echo $titrecolorbw; ?>';
 
 var _2bnoperiph = '<? echo $noperiph; ?>';
 
+<?
+    $_2bauthorizationToken = '';
+    if ($inf->inlocalnet)
+    {
+        $cookies = $_SERVER['HTTP_COOKIE'];
+        
+        $items=explode(";", $cookies );
+        $l = '';
+        $p = '';
+        
+        foreach ($items as $item)
+        {
+            // echo $item;
+            $val = explode("=", $item );
+            if (isset($val[0]))
+            {
+                $key=trim($val[0]);
+                if ($key === 'l') $l = $val[1];
+                if ($key === 'p') $p = $val[1];
+            }
+            
+        }
+        
+        $auto = base64_encode($l.':'.$p);
+        $_2bauthorizationToken = "Basic $auto";   
+    }
+    echo "var _2bauthorizationToken = '$_2bauthorizationToken';";
+      
+?>
+
+
+
+function eedw_getperiphlist_get()
+{
+    // https://secure.eedomus.com/periph_list_radio.php?_dc=1585588045848
+    
+    
+    var baseurl = document.location.origin ;
+     if (_2bauthorizationToken != '')
+        baseurl = 'https://m.eedomus.com';
+    
+    var dc = new Date();
+    var url = baseurl + '/periph_list_radio.php?_dc=' + dc.getTime().toString();
+    
+    eedw_phpcall(url, _2bauthorizationToken, eedw_getperiphlist_result)    
+}
+
+function eedw_getperiphlist_result(data)
+{
+    var innerhtml = '';
+    var js = JSON.parse(data);
+    
+      js.sort(function(a, b)
+     {
+         var r =  a[20] - b[20];
+         if (a[16] == "255" && r != 0) r = -1;
+         if (r == 0) r = a[4].localeCompare(b[4]);
+         return r;
+         
+     });
+    
+    for (var i = 0; i < js.length; i++) 
+    {
+     
+        var bat = js[i][20];
+        if (bat >= 0)
+        {
+            var eid = js[i][1];
+            var room = js[i][3];
+            var pfname = js[i][4];
+            var pname = pfname; 
+            var bat = js[i][20];
+            var strbat = js[i][16];
+            var imgbat = js[i][17];
+            // if (bat = ) bat = "faible";
+            if (strbat == "255") strbat = 'Faible';
+            else strbat = strbat + '%';
+    
+            var item = '<li class="w3-padding-small">'
+            item = item + '<div class="w3-row nopadding ">';
+            item = item + '<div class="w3-col w3-left  nopadding w3-right-align " style="width:40px"><b>';
+            item = item + strbat + '</b></div>'; // Battery
+            item = item + '<div class="w3-rest  nopadding  ellipsis">';
+            if (_2bportail===true) item = item + '<a class="pointer" onclick="javascript:window.parent.showConfig(true, ' + eid.toString() + ');">';
+            item = item + '<img class="imgbat" src="https://m.eedomus.com/img/battery_' + imgbat.toString() + '.png">';
+            if (_2bportail===true) item = item + '</a>';
+            item = item + pname;
+            item = item + '</div></div></li>';
+            innerhtml = innerhtml + item;
+        }
+
+    }
+    
+    if (innerhtml == '')
+    {            
+        var item = '<li class="w3-padding-small w3-center">'
+        item = item + '<p>' + _2bnoperiph + '</p>';
+        item = item + '</li>'; 
+        innerhtml = item;
+    }
+    
+    _2bweltlist.innerHTML  = innerhtml;
+    
+    // force l'affichage pour avoir la hauteur du titre  
+    _2bweltmain.style.display = "block";  
+    
+    eedw_setheight( visualViewport.height, _2bwelttitre.offsetHeight, _2bweltmain, '2bwpanel', _2bmarge);
+    
+    _2bweltload.style.display = "none";
+
+}
+
+// ----------------------------------------------------------------------------
+// eedw_phpcall(url, checkredirection, fnresult)
+// ----------------------------------------------------------------------------
+// effectue un appel ajax avec traitment de la redirection eedomus au besoin
+// ----------------------------------------------------------------------------
+// url : url a executer
+// authorizationToken : Token pour l'acces a eedomus.com a partir de la box
+// fnresult : function (data) pour avoir le resultat de l'appel http
+// ----------------------------------------------------------------------------
+function eedw_phpcall(url, authorizationToken, fnresult)
+{
+  
+    $.ajax({
+    type: "GET",
+    dataType: "text",
+    crossDomain : true,
+    url: url,
+    beforeSend: function(request) 
+        {
+            if (authorizationToken != '')
+                request.setRequestHeader("Authorization", authorizationToken); 
+            
+        },
+    success: function(data, textStatus) 
+        {
+            if (fnresult !== null)  
+                fnresult(data);
+        }
+    });
+};  
 
 function rgbtext2val(rgb)
 {
+    
     var a = rgb.split("(")[1].split(")")[0];
     a = a.split(",");
     var b=a.map(function(x) { //For each array element
@@ -265,10 +405,16 @@ window.onload = function()
 {
     var darktheme = _2bdarktheme;
     var backcolor = '';
+    
     if (darktheme == false && (window.parent !== null) && _2bportail === false)  
     {
         var backcolor = window.getComputedStyle( window.parent.document.body ,null).getPropertyValue('background-color');
-        darktheme = (rgbtext2val(backcolor) === 0);
+        backcolor = backcolor.replace(/ /g,'');
+        if (backcolor != 'rgba(0,0,0,0)')
+            darktheme = (rgbtext2val(backcolor) === 0);
+        else
+            backcolor = 'rgb(255,255,255)';
+        
     }
     
     // ajustement de l'iframe si besoin
@@ -296,77 +442,7 @@ window.onload = function()
         _2bweltmain.style.backgroundColor = backcolor;
         _2bwelttitre.style.backgroundColor = backcolor;
     }
-    
-    var eids = JSON.parse(_2bjsbat);    
-    eids.sort(function(a, b)
-     {
-         var r =  a.bat - b.bat;
-         if (r == 0) r = a.name.localeCompare(b.name);
-         return r;
-         
-     });
-    
-    var nb = eids.length;  
-    var innerhtml = '';
-    for (i=0;i<nb;i++)
-    {
-        
-        var eid = eids[i].id;
-        var bat = eids[i].bat;
-        var batimg = 0;
-        
-        if (bat != -1)
-        {
-            if (bat < 0) bat = 0;
-            if (bat > 100) bat = 100;
-        }
-        
-        var item = '<li class="w3-padding-small">'
-        item = item + '<div class="w3-row nopadding ">';
-        item = item + '<div class="w3-col w3-left  nopadding w3-right-align " style="width:40px"><b>';
-        if (bat != -1)
-            item = item + bat.toString() + '%</b></div>'; // Battery
-        else
-            item = item + 'Faible</b></div>'; // Battery
-        item = item + '<div class="w3-rest  nopadding  ellipsis">';
-        
-        if (_2bportail===true) item = item + '<a class="pointer" onclick="javascript:window.parent.showConfig(true, ' + eid.toString() + ');">';
-        
-        item = item + '<img class="imgbat" src="https://m.eedomus.com/img/battery_';
-        batimg = 0;
-        if (bat > 0)
-        {
-            batimg = Math.floor((bat + 25) / 25);
-            if (batimg > 4) batimg = 4;
-        }
-        item = item + batimg.toString();
-        item = item + '.png">';
-        
-        if (_2bportail===true) item = item + '</a>';
-        
-        item = item + eids[i].name;
-        item = item + '</div></div></li>';
-
-        innerhtml = innerhtml + item;
-        
-    }
-    if (nb == 0)
-    {            
-        var item = '<li class="w3-padding-small w3-center">'
-        item = item + '<p>' + _2bnoperiph + '</p>';
-        item = item + '</li>'; 
-        innerhtml = item;
-    }
-    
-    _2bweltlist.innerHTML  = innerhtml;
-    
-    // force l'affichage pour avoir la hauteur du titre  
-    _2bweltmain.style.display = "block";  
-    
-    eedw_setheight( visualViewport.height, _2bwelttitre.offsetHeight, _2bweltmain, '2bwpanel', _2bmarge);
-    
-    _2bweltload.style.display = "none";
-    
+    eedw_getperiphlist_get();
 };    
 
 </script>
@@ -386,54 +462,6 @@ function sdk_removeifatend($source, $atend)
     if (substr($source,-strlen($atend))===$atend) 
         $ret = substr($source, 0, strlen($source)-strlen($atend));
     return $ret;
-}
-
-function sdk_getjsbatteries($inf,$maxlevel, &$nbitems)
-{
-    
- 
-    $spid = 'parent_device_id';
-    $sid = 'device_id';
-    $sname ='full_name';
-    $eeids = getPeriphList();
-
-    
-    // parcourt du resultat pour obtenir les indicateurs de batteries
-    $jsret = '[ ';
-    $inb = 0;
-    foreach ($eeids as $key => $value)
-    {
-        $pid = $value[$spid];
-        $eid = $value[$sid];
-        if ($pid === '' || $pid === null || $pid=== $eid) 
-        {
-            $ebat = $value['battery'];
-            
-            if ($ebat == 255) $ebat = -1;
-            if ($ebat !== ''  && intval($ebat) <= $maxlevel)
-            {
-                $sep = ',';
-                
-                $ename = htmlspecialchars($value[$sname]);
-                if ($inf->portailmobile === true || $inf->portaillocal === true)
-                    $ename = utf8_encode($ename);
-                
-    
-                if ($inb === 0) $sep='';
-                
-                $ename = str_replace ( "'","\\'", $ename);
-            	$ename = str_replace ( "\\\\'","\\'", $ename);
-                $jsret = $jsret.$sep.'{ "id":"'.$eid.'" ,"bat":'.$ebat.' ,"name":"'.$ename.'" }';
-                $inb ++;
-            }
-        }
-    }
-    
-    $nbitems = $inb;
-    $jsret = $jsret.']';
-    //$jsret = str_replace ( "'","\\'", $jsret);
-	//$jsret = str_replace ( "\\\\'","\\'", $jsret);
-    return $jsret; 
 }
 
 
